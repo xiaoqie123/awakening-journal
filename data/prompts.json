@@ -1,0 +1,10 @@
+[
+  { "id": "p1", "text": "今天我觉察到了什么？", "category": "元认知", "active": true },
+  { "id": "p2", "text": "我如何运用了元认知来观察自己的想法？", "category": "元认知", "active": true },
+  { "id": "p3", "text": "今天哪个瞬间我克服了多巴胺的绑架？", "category": "多巴胺管理", "active": true },
+  { "id": "p4", "text": "我今天有没有被即时满足的冲动裹挟？", "category": "多巴胺管理", "active": true },
+  { "id": "p5", "text": "今天我为财富自由做了什么有意识的决定？", "category": "财富心态", "active": true },
+  { "id": "p6", "text": "我是否在比较中失去了平静？我是如何找回的？", "category": "认知觉醒", "active": true },
+  { "id": "p7", "text": "今天我专注的时刻是什么？是什么帮助我进入了心流？", "category": "冥想与专注", "active": true },
+  { "id": "p8", "text": "今天我想感恩的三件小事是什么？", "category": "其他", "active": true }
+]

@@ -1,0 +1,10 @@
+[
+  { "id": "a1", "name": "7天觉醒者", "description": "连续记录7天", "icon": "🌱", "rarity": "common", "condition": { "type": "streak", "threshold": 7 } },
+  { "id": "a2", "name": "21天元认知践行者", "description": "连续记录21天", "icon": "🧠", "rarity": "rare", "condition": { "type": "streak", "threshold": 21 } },
+  { "id": "a3", "name": "多巴胺驯兽师", "description": "在「多巴胺管理」分类下记录10篇", "icon": "🦁", "rarity": "rare", "condition": { "type": "category_master", "threshold": 10, "category": "多巴胺管理" } },
+  { "id": "a4", "name": "万字觉醒", "description": "累计记录超过10000字", "icon": "📜", "rarity": "common", "condition": { "type": "total_words", "threshold": 10000 } },
+  { "id": "a5", "name": "50天觉醒者", "description": "连续记录50天", "icon": "🌟", "rarity": "epic", "condition": { "type": "streak", "threshold": 50 } },
+  { "id": "a6", "name": "100天觉醒大师", "description": "连续记录100天", "icon": "👁️", "rarity": "legendary", "condition": { "type": "streak", "threshold": 100 } },
+  { "id": "a7", "name": "财富觉醒者", "description": "在「财富心态」分类下记录10篇", "icon": "💰", "rarity": "rare", "condition": { "type": "category_master", "threshold": 10, "category": "财富心态" } },
+  { "id": "a8", "name": "心流探索者", "description": "累计记录30篇日记", "icon": "🌊", "rarity": "rare", "condition": { "type": "total_entries", "threshold": 30 } }
+]

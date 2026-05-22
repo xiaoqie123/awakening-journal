@@ -1,26 +1,227 @@
 @import "tailwindcss";
 
+/* Manual dark mode via .dark class on <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ============================================================
+   CSS Custom Properties
+   ============================================================ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-primary: #FAF8F5;
+  --bg-card: #FFFFFF;
+  --text-primary: #2D2D2F;
+  --text-muted: #6B6B70;
+  --text-light: #9A9A9E;
+  --accent: #5B9A8B;
+  --accent-hover: #4A7D71;
+  --accent-soft: #F0F5F4;
+  --gold: #E8C77D;
+  --gold-hover: #D4A84B;
+  --success: #7BA87F;
+  --aura-purple: #7B6FAA;
+  --aura-deep: #9B8FC0;
+  --border: #EBE4DB;
+  --shadow: rgba(0, 0, 0, 0.04);
+
+  --font-heading: 'PingFang SC', system-ui, -apple-system, sans-serif;
+  --font-body: Georgia, 'Noto Serif SC', serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --line-height-body: 1.75;
+  --max-reading: 65ch;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.dark {
+  --bg-primary: #1A1A1D;
+  --bg-card: #252528;
+  --text-primary: #E8E6E3;
+  --text-muted: #9A9A9E;
+  --text-light: #6B6B70;
+  --accent: #7DB9B0;
+  --accent-hover: #8BBAB2;
+  --accent-soft: #2F2F33;
+  --gold: #D4A84B;
+  --gold-hover: #B8913A;
+  --success: #8CC090;
+  --aura-purple: #9B8FC0;
+  --aura-deep: #7B6FAA;
+  --border: #3A3A3F;
+  --shadow: rgba(0, 0, 0, 0.2);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ============================================================
+   Tailwind v4 @theme — register design tokens as utilities
+   ============================================================ */
+@theme {
+  /* Color scales (for bg-warm-100, text-sage-500, etc.) */
+  --color-warm-50: #FDFCFA;
+  --color-warm-100: #FAF8F5;
+  --color-warm-200: #F5F0EB;
+  --color-warm-300: #EBE4DB;
+
+  --color-deep-900: #1A1A1D;
+  --color-deep-800: #252528;
+  --color-deep-700: #2F2F33;
+  --color-deep-600: #3A3A3F;
+
+  --color-ink: #2D2D2F;
+  --color-ink-muted: #6B6B70;
+  --color-ink-light: #9A9A9E;
+
+  --color-sage-50: #F0F5F4;
+  --color-sage-100: #DCE8E5;
+  --color-sage-200: #B5D1CC;
+  --color-sage-300: #8BBAB2;
+  --color-sage-400: #7DB9B0;
+  --color-sage-500: #5B9A8B;
+  --color-sage-600: #4A7D71;
+  --color-sage-700: #3A6258;
+
+  --color-gold-300: #F0D78C;
+  --color-gold-400: #E8C77D;
+  --color-gold-500: #D4A84B;
+  --color-gold-600: #B8913A;
+
+  --color-verdant-400: #8CC090;
+  --color-verdant-500: #7BA87F;
+
+  --color-aura-purple: #7B6FAA;
+  --color-aura-deep: #9B8FC0;
+
+  /* Semantic surface colors — driven by CSS vars for dark mode */
+  --color-surface: var(--bg-primary);
+  --color-card: var(--bg-card);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-gold: var(--gold);
+  --color-gold-hover: var(--gold-hover);
+  --color-success: var(--success);
+  --color-border: var(--border);
+
+  /* Fonts */
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+
+  /* Font sizes */
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.75;
+  --text-body-lg: 1.25rem;
+  --text-body-lg--line-height: 1.7;
+
+  /* Max widths */
+  --max-width-reading: 65ch;
+
+  /* Animations */
+  --animate-aurora: aurora 3s ease-in-out infinite;
+  --animate-float-in: floatIn 0.6s ease-out;
+  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-pulse-gentle: pulseGentle 2s ease-in-out infinite;
+  --animate-badge-unlock: badgeUnlock 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+/* ============================================================
+   Keyframes
+   ============================================================ */
+@keyframes aurora {
+  0%, 100% { background-position: 0% 50%; opacity: 0.8; }
+  50% { background-position: 100% 50%; opacity: 1; }
+}
+
+@keyframes floatIn {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulseGentle {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+
+@keyframes badgeUnlock {
+  0% { transform: scale(0) rotate(-12deg); opacity: 0; }
+  60% { transform: scale(1.2) rotate(3deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* ============================================================
+   Base layer — global element defaults
+   ============================================================ */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 1.0625rem;
+    line-height: var(--line-height-body);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    color: var(--text-primary);
+  }
+
+  a {
+    color: var(--accent);
+    transition: color 0.2s ease;
+  }
+
+  a:hover {
+    color: var(--accent-hover);
+  }
+
+  /* Focus — accessibility */
+  *:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background-color: var(--accent);
+    color: white;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ============================================================
+   Utility layer
+   ============================================================ */
+@layer utilities {
+  /* Reading width */
+  .prose-reading {
+    max-width: var(--max-reading);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Custom scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--text-light) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: var(--text-light);
+    border-radius: 3px;
+  }
 }
