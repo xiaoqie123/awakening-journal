@@ -9,13 +9,13 @@ interface Props {
 }
 
 export async function generateStaticParams() {
-  const metas = getAllJournalMetas();
+  const metas = await getAllJournalMetas();
   return metas.map(m => ({ slug: m.slug }));
 }
 
 export default async function JournalDetailPage({ params }: Props) {
   const { slug } = await params;
-  const entry = getJournalBySlug(slug);
+  const entry = await getJournalBySlug(slug);
 
   if (!entry) notFound();
 

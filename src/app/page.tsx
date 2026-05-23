@@ -3,10 +3,10 @@ import { PenLine, Flame, BookOpen, TrendingUp, ArrowRight, Library } from 'lucid
 import { getSiteMeta, getRandomQuote, getPrompts } from '@/lib/data-utils';
 import SubscribeForm from '@/components/SubscribeForm';
 
-export default function HomePage() {
-  const meta = getSiteMeta();
-  const quote = getRandomQuote();
-  const prompts = getPrompts();
+export default async function HomePage() {
+  const meta = await getSiteMeta();
+  const quote = await getRandomQuote();
+  const prompts = await getPrompts();
   const todayPrompt = prompts[Math.floor(Math.random() * prompts.length)] ||
     { id: 'default', text: '今天我觉察到了什么？' };
 

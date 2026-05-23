@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 import { getSiteMeta, updateSiteMeta, getRandomQuote, calculateStreak, getAllJournalMetas } from '@/lib/data-utils';
-import { Quote, MoodLevel, Category } from '@/lib/types';
-
-const JOURNAL_DIR = path.join(process.cwd(), 'data', 'journal');
+import { writeFile } from '@/lib/storage';
+import { Quote } from '@/lib/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,10 +10,6 @@ export async function POST(request: NextRequest) {
 
     if (!content || content.trim().length === 0) {
       return NextResponse.json({ error: '内容不能为空' }, { status: 400 });
-    }
-
-    if (!fs.existsSync(JOURNAL_DIR)) {
-      fs.mkdirSync(JOURNAL_DIR, { recursive: true });
     }
 
     const today = new Date();
@@ -44,19 +37,19 @@ export async function POST(request: NextRequest) {
       .join('\n');
 
     const fileContent = `---\n${yaml}\n---\n\n${content.trim()}\n`;
+    const filePath = `data/journal/${slug}.md`;
 
-    const filePath = path.join(JOURNAL_DIR, `${slug}.md`);
-    fs.writeFileSync(filePath, fileContent, 'utf-8');
+    // Persist via storage layer (Vercel Blob in prod, fs in dev)
+    await writeFile(filePath, fileContent);
 
     // Update site metadata
-    const currentMeta = getSiteMeta();
-    const allMetas = getAllJournalMetas();
+    const currentMeta = await getSiteMeta();
+    const allMetas = await getAllJournalMetas();
     const { current: newStreak, longest: newLongest } = calculateStreak(allMetas);
 
-    // Avoid double-counting if already wrote today
     const isNewEntry = currentMeta.lastEntryDate !== slug;
 
-    const updatedMeta = updateSiteMeta({
+    const updatedMeta = await updateSiteMeta({
       currentStreak: newStreak,
       longestStreak: Math.max(currentMeta.longestStreak, newLongest),
       totalEntries: isNewEntry ? currentMeta.totalEntries + 1 : currentMeta.totalEntries,
@@ -69,7 +62,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Variable reward
-    const reward: Quote = getRandomQuote();
+    const reward: Quote = await getRandomQuote();
 
     // Check for milestone achievements
     const newAchievements: string[] = [];

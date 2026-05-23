@@ -3,7 +3,7 @@ import { getRandomJournal } from '@/lib/data-utils';
 
 export async function GET() {
   try {
-    const entry = getRandomJournal();
+    const entry = await getRandomJournal();
     if (!entry) {
       return NextResponse.json({ slug: null }, { status: 404 });
     }

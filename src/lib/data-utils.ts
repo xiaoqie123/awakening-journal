@@ -1,30 +1,29 @@
-import fs from 'fs';
-import path from 'path';
 import matter from 'gray-matter';
 import { JournalEntry, JournalMeta, SiteMeta, Quote, Prompt, Achievement } from './types';
+import { readFile, writeFile, readJson, writeJson, fileExists, listDir } from './storage';
 
 // ===== Path configuration =====
-const DATA_DIR = path.join(process.cwd(), 'data');
-const JOURNAL_DIR = path.join(DATA_DIR, 'journal');
-const META_PATH = path.join(DATA_DIR, 'meta.json');
-const QUOTES_PATH = path.join(DATA_DIR, 'quotes.json');
-const PROMPTS_PATH = path.join(DATA_DIR, 'prompts.json');
-const ACHIEVEMENTS_PATH = path.join(DATA_DIR, 'achievements.json');
-const FOOTPRINTS_PATH = path.join(DATA_DIR, 'footprints.json');
+const JOURNAL_DIR = 'data/journal';
+const META_PATH = 'data/meta.json';
+const QUOTES_PATH = 'data/quotes.json';
+const PROMPTS_PATH = 'data/prompts.json';
+const ACHIEVEMENTS_PATH = 'data/achievements.json';
+const FOOTPRINTS_PATH = 'data/footprints.json';
 
 // ===== Journal reading =====
 
 /** Get all journal metadata, sorted by date descending */
-export function getAllJournalMetas(): JournalMeta[] {
-  ensureDir(JOURNAL_DIR);
-  const files = fs.readdirSync(JOURNAL_DIR).filter(f => f.endsWith('.md'));
+export async function getAllJournalMetas(): Promise<JournalMeta[]> {
+  const files = await listDir(JOURNAL_DIR);
+  const mdFiles = files.filter(f => f.endsWith('.md'));
 
   const metas: JournalMeta[] = [];
-  for (const file of files) {
-    const raw = fs.readFileSync(path.join(JOURNAL_DIR, file), 'utf-8');
+  for (const file of mdFiles) {
+    const raw = await readFile(file);
     const { data } = matter(raw);
+    const slug = file.replace(`${JOURNAL_DIR}/`, '').replace('.md', '');
     metas.push({
-      slug: file.replace('.md', ''),
+      slug,
       title: data.title || undefined,
       category: data.category || '其他',
       tags: data.tags || [],
@@ -39,11 +38,11 @@ export function getAllJournalMetas(): JournalMeta[] {
 }
 
 /** Get a single journal entry by slug */
-export function getJournalBySlug(slug: string): JournalEntry | null {
-  const filePath = path.join(JOURNAL_DIR, `${slug}.md`);
-  if (!fs.existsSync(filePath)) return null;
+export async function getJournalBySlug(slug: string): Promise<JournalEntry | null> {
+  const filePath = `${JOURNAL_DIR}/${slug}.md`;
+  if (!(await fileExists(filePath))) return null;
 
-  const raw = fs.readFileSync(filePath, 'utf-8');
+  const raw = await readFile(filePath);
   const { data, content } = matter(raw);
 
   return {
@@ -62,8 +61,8 @@ export function getJournalBySlug(slug: string): JournalEntry | null {
 }
 
 /** Get a random past journal entry */
-export function getRandomJournal(): JournalEntry | null {
-  const metas = getAllJournalMetas();
+export async function getRandomJournal(): Promise<JournalEntry | null> {
+  const metas = await getAllJournalMetas();
   if (metas.length === 0) return null;
   const randomMeta = metas[Math.floor(Math.random() * metas.length)];
   return getJournalBySlug(randomMeta.slug);
@@ -71,9 +70,8 @@ export function getRandomJournal(): JournalEntry | null {
 
 // ===== Site metadata =====
 
-export function getSiteMeta(): SiteMeta {
-  ensureDir(DATA_DIR);
-  if (!fs.existsSync(META_PATH)) {
+export async function getSiteMeta(): Promise<SiteMeta> {
+  if (!(await fileExists(META_PATH))) {
     const defaultMeta: SiteMeta = {
       currentStreak: 0,
       longestStreak: 0,
@@ -83,32 +81,32 @@ export function getSiteMeta(): SiteMeta {
       achievements: [],
       streakHistory: [],
     };
-    fs.writeFileSync(META_PATH, JSON.stringify(defaultMeta, null, 2));
+    await writeJson(META_PATH, defaultMeta);
     return defaultMeta;
   }
-  return JSON.parse(fs.readFileSync(META_PATH, 'utf-8'));
+  return readJson<SiteMeta>(META_PATH);
 }
 
-export function updateSiteMeta(updates: Partial<SiteMeta>): SiteMeta {
-  const current = getSiteMeta();
+export async function updateSiteMeta(updates: Partial<SiteMeta>): Promise<SiteMeta> {
+  const current = await getSiteMeta();
   const updated = { ...current, ...updates };
-  fs.writeFileSync(META_PATH, JSON.stringify(updated, null, 2));
+  await writeJson(META_PATH, updated);
   return updated;
 }
 
 // ===== Reward system data =====
 
-export function getQuotes(): Quote[] {
-  if (!fs.existsSync(QUOTES_PATH)) return [];
-  return JSON.parse(fs.readFileSync(QUOTES_PATH, 'utf-8'));
+export async function getQuotes(): Promise<Quote[]> {
+  if (!(await fileExists(QUOTES_PATH))) return [];
+  return readJson<Quote[]>(QUOTES_PATH);
 }
 
 /**
  * Variable reward: returns a random quote weighted by rarity
  * common: 70%, rare: 20%, epic: 8%, legendary: 2%
  */
-export function getRandomQuote(): Quote {
-  const quotes = getQuotes();
+export async function getRandomQuote(): Promise<Quote> {
+  const quotes = await getQuotes();
   if (quotes.length === 0) {
     return { id: 'default', text: '觉察是改变的开始。', author: '卡尔·荣格', rarity: 'common' };
   }
@@ -124,25 +122,20 @@ export function getRandomQuote(): Quote {
   return weighted[Math.floor(Math.random() * weighted.length)];
 }
 
-export function getPrompts(): Prompt[] {
-  if (!fs.existsSync(PROMPTS_PATH)) return [];
-  return JSON.parse(fs.readFileSync(PROMPTS_PATH, 'utf-8')).filter((p: Prompt) => p.active);
+export async function getPrompts(): Promise<Prompt[]> {
+  if (!(await fileExists(PROMPTS_PATH))) return [];
+  const prompts = await readJson<Prompt[]>(PROMPTS_PATH);
+  return prompts.filter(p => p.active);
 }
 
-export function getAchievements(): Achievement[] {
-  if (!fs.existsSync(ACHIEVEMENTS_PATH)) return [];
-  return JSON.parse(fs.readFileSync(ACHIEVEMENTS_PATH, 'utf-8'));
+export async function getAchievements(): Promise<Achievement[]> {
+  if (!(await fileExists(ACHIEVEMENTS_PATH))) return [];
+  return readJson<Achievement[]>(ACHIEVEMENTS_PATH);
 }
 
 // ===== Utility functions =====
 
-function ensureDir(dir: string) {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-}
-
-/** Calculate current and longest streak from journal meta list */
+/** Calculate current and longest streak from journal meta list (sync — pure computation) */
 export function calculateStreak(metas: JournalMeta[]): { current: number; longest: number } {
   if (metas.length === 0) return { current: 0, longest: 0 };
 
@@ -154,7 +147,6 @@ export function calculateStreak(metas: JournalMeta[]): { current: number; longes
   const today = new Date().toISOString().slice(0, 10);
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
 
-  // Calculate current streak
   let current = 0;
   const hasToday = dates.includes(today);
   const hasYesterday = dates.includes(yesterday);
@@ -175,7 +167,6 @@ export function calculateStreak(metas: JournalMeta[]): { current: number; longes
     }
   }
 
-  // Calculate longest streak
   for (let i = 1; i < dates.length; i++) {
     const prev = new Date(dates[i - 1]);
     const curr = new Date(dates[i]);

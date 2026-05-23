@@ -2,10 +2,10 @@ import { getAllJournalMetas, getSiteMeta, getAchievements } from '@/lib/data-uti
 import { Flame, BookOpen, FileText, Calendar, Trophy, Lock } from 'lucide-react';
 import { Achievement } from '@/lib/types';
 
-export default function DashboardPage() {
-  const metas = getAllJournalMetas();
-  const siteMeta = getSiteMeta();
-  const achievements = getAchievements();
+export default async function DashboardPage() {
+  const metas = await getAllJournalMetas();
+  const siteMeta = await getSiteMeta();
+  const achievements = await getAchievements();
 
   // Mood data (last 30 entries, chronological order)
   const moodData = metas.slice(0, 30).reverse();
