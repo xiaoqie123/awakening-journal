@@ -7,6 +7,8 @@ import RandomLookLink from '@/components/RandomLookLink';
 import FootprintsBanner from '@/components/FootprintsBanner';
 import MoodAtmosphere from '@/components/MoodAtmosphere';
 
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage() {
   const meta = await getSiteMeta();
   const quote = await getRandomQuote();

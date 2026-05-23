@@ -4,13 +4,10 @@ import { ArrowLeft, Calendar, Tag } from 'lucide-react';
 import { getJournalBySlug, getAllJournalMetas } from '@/lib/data-utils';
 import { MOOD_LABELS } from '@/lib/constants';
 
+export const dynamic = 'force-dynamic';
+
 interface Props {
   params: Promise<{ slug: string }>;
-}
-
-export async function generateStaticParams() {
-  const metas = await getAllJournalMetas();
-  return metas.map(m => ({ slug: m.slug }));
 }
 
 export default async function JournalDetailPage({ params }: Props) {

@@ -5,6 +5,8 @@ import { Achievement } from '@/lib/types';
 import RestDayManager from '@/components/RestDayManager';
 import FootprintsBanner from '@/components/FootprintsBanner';
 
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardPage() {
   const metas = await getAllJournalMetas();
   const siteMeta = await getSiteMeta();
