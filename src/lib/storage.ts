@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 
-// VERCEL_URL is set by the platform to the deployment URL — only available in real Vercel environments
-const isVercel = !!process.env.VERCEL_URL;
+// VERCEL_REGION is only set at Vercel runtime (e.g. 'iad1') — never in .env.local or during build
+const isVercel = !!process.env.VERCEL_REGION;
 
 // Lazy-load @vercel/blob to avoid SDK initialization during local builds
 type BlobAPI = {
