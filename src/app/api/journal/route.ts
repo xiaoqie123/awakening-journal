@@ -78,7 +78,8 @@ export async function POST(request: NextRequest) {
       streak: newStreak,
     });
   } catch (error) {
-    console.error('保存日记失败:', error);
-    return NextResponse.json({ error: '保存失败' }, { status: 500 });
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('保存日记失败:', message);
+    return NextResponse.json({ error: '保存失败', detail: message }, { status: 500 });
   }
 }
