@@ -1,4 +1,4 @@
-import { getAllJournalMetas, getSiteMeta, getAchievements, calculateStreak } from '@/lib/data-utils';
+import { getCachedAllJournalMetas, getCachedSiteMeta, getCachedAchievements, calculateStreak } from '@/lib/data-utils';
 import { getUserConfig, getAvailableRestDays } from '@/lib/user-config';
 import { verifySession } from '@/lib/auth/session';
 import { Flame, BookOpen, FileText, Calendar, Trophy, Lock, Download, ChevronRight } from 'lucide-react';
@@ -9,9 +9,9 @@ import FootprintsBanner from '@/components/FootprintsBanner';
 
 export default async function DashboardPage() {
   const { userId } = await verifySession();
-  const metas = await getAllJournalMetas(userId);
-  const siteMeta = await getSiteMeta(userId);
-  const achievements = await getAchievements();
+  const metas = await getCachedAllJournalMetas(userId);
+  const siteMeta = await getCachedSiteMeta(userId);
+  const achievements = await getCachedAchievements();
   const userConfig = await getUserConfig(userId);
   const availableRestDays = await getAvailableRestDays(userId);
 

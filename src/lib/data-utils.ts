@@ -1,4 +1,5 @@
 import matter from 'gray-matter';
+import { cache } from 'react';
 import { JournalEntry, JournalMeta, SiteMeta, Quote, Prompt, Achievement } from './types';
 import { readFile, writeFile, readJson, writeJson, fileExists, listDir } from './storage';
 
@@ -223,3 +224,14 @@ export function calculateStreak(
 
   return { current, longest };
 }
+
+// ===== React cache() wrappers — deduplicate calls within a single render =====
+// Pages that import these get automatic request-level memoization.
+// API routes use the original exports (cache() is a no-op outside React render).
+
+export const getCachedAllJournalMetas = cache(getAllJournalMetas);
+export const getCachedSiteMeta = cache(getSiteMeta);
+export const getCachedQuotes = cache(getQuotes);
+export const getCachedRandomQuote = cache(getRandomQuote);
+export const getCachedPrompts = cache(getPrompts);
+export const getCachedAchievements = cache(getAchievements);

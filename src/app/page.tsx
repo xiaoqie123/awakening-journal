@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { PenLine, Flame, BookOpen, FileText, ChevronRight } from 'lucide-react';
-import { getSiteMeta, getRandomQuote, getPrompts, getAllJournalMetas } from '@/lib/data-utils';
+import { getCachedSiteMeta, getCachedRandomQuote, getCachedPrompts, getCachedAllJournalMetas } from '@/lib/data-utils';
 import { getUserConfig } from '@/lib/user-config';
 import { verifySession } from '@/lib/auth/session';
 import SubscribeForm from '@/components/SubscribeForm';
@@ -10,11 +10,11 @@ import MoodAtmosphere from '@/components/MoodAtmosphere';
 
 export default async function HomePage() {
   const { userId } = await verifySession();
-  const meta = await getSiteMeta(userId);
-  const quote = await getRandomQuote();
-  const prompts = await getPrompts();
+  const meta = await getCachedSiteMeta(userId);
+  const quote = await getCachedRandomQuote();
+  const prompts = await getCachedPrompts();
   const userConfig = await getUserConfig(userId);
-  const allMetas = await getAllJournalMetas(userId);
+  const allMetas = await getCachedAllJournalMetas(userId);
   const todayPrompt = prompts[Math.floor(Math.random() * prompts.length)] ||
     { id: 'default', text: '今天我觉察到了什么？' };
 
