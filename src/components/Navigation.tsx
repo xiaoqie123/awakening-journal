@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { PenLine, LayoutDashboard, Library, Home, Menu, X } from 'lucide-react';
+import { PenLine, LayoutDashboard, Library, Home, Menu, X, LogOut, User } from 'lucide-react';
 import { useState } from 'react';
 import ThemeToggle from './ThemeToggle';
+import { logout } from '@/lib/auth/actions';
 
 const navItems = [
   { href: '/', label: '首页', icon: Home },
@@ -13,7 +14,7 @@ const navItems = [
   { href: '/library', label: '图书馆', icon: Library },
 ];
 
-export default function Navigation() {
+export default function Navigation({ userId }: { userId?: string }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -52,6 +53,28 @@ export default function Navigation() {
               </Link>
             );
           })}
+
+          {userId ? (
+            <form action={logout}>
+              <button
+                type="submit"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-ink-muted dark:text-[#9A9A9E] hover:bg-warm-200 dark:hover:bg-deep-700 hover:text-ink dark:hover:text-[#E8E6E3] transition-all duration-200"
+                aria-label="退出登录"
+              >
+                <LogOut size={16} />
+                <span>退出</span>
+              </button>
+            </form>
+          ) : (
+            <Link
+              href="/login"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-ink-muted dark:text-[#9A9A9E] hover:bg-warm-200 dark:hover:bg-deep-700 hover:text-ink dark:hover:text-[#E8E6E3] transition-all duration-200"
+            >
+              <User size={16} />
+              <span>登录</span>
+            </Link>
+          )}
+
           <ThemeToggle />
         </div>
 
@@ -92,6 +115,30 @@ export default function Navigation() {
               </Link>
             );
           })}
+
+          <div className="mt-2 pt-2 border-t border-warm-300 dark:border-deep-700">
+            {userId ? (
+              <form action={logout}>
+                <button
+                  type="submit"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-ink-muted hover:bg-warm-200 dark:hover:bg-deep-700 w-full"
+                >
+                  <LogOut size={18} />
+                  退出登录
+                </button>
+              </form>
+            ) : (
+              <Link
+                href="/login"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-ink-muted hover:bg-warm-200 dark:hover:bg-deep-700"
+              >
+                <User size={18} />
+                登录
+              </Link>
+            )}
+          </div>
         </div>
       )}
     </nav>

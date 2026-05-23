@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSiteMeta, updateSiteMeta, getRandomQuote, calculateStreak, getAllJournalMetas } from '@/lib/data-utils';
 import { getUserConfig } from '@/lib/user-config';
+import { getSessionUserId } from '@/lib/auth/session';
 import { writeFile } from '@/lib/storage';
 import { Quote } from '@/lib/types';
 import { rateLimit, getRateLimitKey } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
+  const userId = await getSessionUserId();
+  if (!userId) {
+    return NextResponse.json({ error: '请先登录' }, { status: 401 });
+  }
+
   // Rate limit: 10 writes per minute per IP
   const rlKey = getRateLimitKey(request);
   const rl = rateLimit(rlKey, 10, 60_000);
@@ -49,20 +55,20 @@ export async function POST(request: NextRequest) {
       .join('\n');
 
     const fileContent = `---\n${yaml}\n---\n\n${content.trim()}\n`;
-    const filePath = `data/journal/${slug}.md`;
+    const filePath = `data/users/${userId}/journal/${slug}.md`;
 
     // Persist via storage layer (Vercel Blob in prod, fs in dev)
     await writeFile(filePath, fileContent);
 
     // Update site metadata
-    const currentMeta = await getSiteMeta();
-    const allMetas = await getAllJournalMetas();
-    const userConfig = await getUserConfig();
+    const currentMeta = await getSiteMeta(userId);
+    const allMetas = await getAllJournalMetas(userId);
+    const userConfig = await getUserConfig(userId);
     const { current: newStreak, longest: newLongest } = calculateStreak(allMetas, userConfig.restDays);
 
     const isNewEntry = currentMeta.lastEntryDate !== slug;
 
-    const updatedMeta = await updateSiteMeta({
+    const updatedMeta = await updateSiteMeta(userId, {
       currentStreak: newStreak,
       longestStreak: Math.max(currentMeta.longestStreak, newLongest),
       totalEntries: isNewEntry ? currentMeta.totalEntries + 1 : currentMeta.totalEntries,

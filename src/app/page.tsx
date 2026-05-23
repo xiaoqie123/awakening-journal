@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { PenLine, Flame, TrendingUp, Library, Sparkles } from 'lucide-react';
 import { getSiteMeta, getRandomQuote, getPrompts, getAllJournalMetas } from '@/lib/data-utils';
 import { getUserConfig } from '@/lib/user-config';
+import { verifySession } from '@/lib/auth/session';
 import SubscribeForm from '@/components/SubscribeForm';
 import RandomLookLink from '@/components/RandomLookLink';
 import FootprintsBanner from '@/components/FootprintsBanner';
@@ -10,11 +11,12 @@ import MoodAtmosphere from '@/components/MoodAtmosphere';
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const meta = await getSiteMeta();
+  const { userId } = await verifySession();
+  const meta = await getSiteMeta(userId);
   const quote = await getRandomQuote();
   const prompts = await getPrompts();
-  const userConfig = await getUserConfig();
-  const allMetas = await getAllJournalMetas();
+  const userConfig = await getUserConfig(userId);
+  const allMetas = await getAllJournalMetas(userId);
   const todayPrompt = prompts[Math.floor(Math.random() * prompts.length)] ||
     { id: 'default', text: '今天我觉察到了什么？' };
 

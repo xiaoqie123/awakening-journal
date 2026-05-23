@@ -2,9 +2,9 @@ import matter from 'gray-matter';
 import { JournalEntry, JournalMeta, SiteMeta, Quote, Prompt, Achievement } from './types';
 import { readFile, writeFile, readJson, writeJson, fileExists, listDir } from './storage';
 
-// ===== Path configuration =====
-const JOURNAL_DIR = 'data/journal';
-const META_PATH = 'data/meta.json';
+// ===== Path helpers =====
+function journalDir(userId: string) { return `data/users/${userId}/journal`; }
+function metaPath(userId: string) { return `data/users/${userId}/meta.json`; }
 const QUOTES_PATH = 'data/quotes.json';
 const PROMPTS_PATH = 'data/prompts.json';
 const ACHIEVEMENTS_PATH = 'data/achievements.json';
@@ -12,16 +12,16 @@ const FOOTPRINTS_PATH = 'data/footprints.json';
 
 // ===== Journal reading =====
 
-/** Get all journal metadata, sorted by date descending */
-export async function getAllJournalMetas(): Promise<JournalMeta[]> {
-  const files = await listDir(JOURNAL_DIR);
+export async function getAllJournalMetas(userId: string): Promise<JournalMeta[]> {
+  const dir = journalDir(userId);
+  const files = await listDir(dir);
   const mdFiles = files.filter(f => f.endsWith('.md'));
 
   const metas: JournalMeta[] = [];
   for (const file of mdFiles) {
     const raw = await readFile(file);
     const { data } = matter(raw);
-    const slug = file.replace(`${JOURNAL_DIR}/`, '').replace('.md', '');
+    const slug = file.replace(`${dir}/`, '').replace('.md', '');
     metas.push({
       slug,
       title: data.title || undefined,
@@ -37,9 +37,8 @@ export async function getAllJournalMetas(): Promise<JournalMeta[]> {
   return metas.sort((a, b) => b.slug.localeCompare(a.slug));
 }
 
-/** Get a single journal entry by slug */
-export async function getJournalBySlug(slug: string): Promise<JournalEntry | null> {
-  const filePath = `${JOURNAL_DIR}/${slug}.md`;
+export async function getJournalBySlug(userId: string, slug: string): Promise<JournalEntry | null> {
+  const filePath = `${journalDir(userId)}/${slug}.md`;
   if (!(await fileExists(filePath))) return null;
 
   const raw = await readFile(filePath);
@@ -60,18 +59,18 @@ export async function getJournalBySlug(slug: string): Promise<JournalEntry | nul
   };
 }
 
-/** Get a random past journal entry */
-export async function getRandomJournal(): Promise<JournalEntry | null> {
-  const metas = await getAllJournalMetas();
+export async function getRandomJournal(userId: string): Promise<JournalEntry | null> {
+  const metas = await getAllJournalMetas(userId);
   if (metas.length === 0) return null;
   const randomMeta = metas[Math.floor(Math.random() * metas.length)];
-  return getJournalBySlug(randomMeta.slug);
+  return getJournalBySlug(userId, randomMeta.slug);
 }
 
 // ===== Site metadata =====
 
-export async function getSiteMeta(): Promise<SiteMeta> {
-  if (!(await fileExists(META_PATH))) {
+export async function getSiteMeta(userId: string): Promise<SiteMeta> {
+  const p = metaPath(userId);
+  if (!(await fileExists(p))) {
     const defaultMeta: SiteMeta = {
       currentStreak: 0,
       longestStreak: 0,
@@ -81,30 +80,26 @@ export async function getSiteMeta(): Promise<SiteMeta> {
       achievements: [],
       streakHistory: [],
     };
-    await writeJson(META_PATH, defaultMeta);
+    await writeJson(p, defaultMeta);
     return defaultMeta;
   }
-  return readJson<SiteMeta>(META_PATH);
+  return readJson<SiteMeta>(p);
 }
 
-export async function updateSiteMeta(updates: Partial<SiteMeta>): Promise<SiteMeta> {
-  const current = await getSiteMeta();
+export async function updateSiteMeta(userId: string, updates: Partial<SiteMeta>): Promise<SiteMeta> {
+  const current = await getSiteMeta(userId);
   const updated = { ...current, ...updates };
-  await writeJson(META_PATH, updated);
+  await writeJson(metaPath(userId), updated);
   return updated;
 }
 
-// ===== Reward system data =====
+// ===== Reward system data (shared — no userId) =====
 
 export async function getQuotes(): Promise<Quote[]> {
   if (!(await fileExists(QUOTES_PATH))) return [];
   return readJson<Quote[]>(QUOTES_PATH);
 }
 
-/**
- * Variable reward: returns a random quote weighted by rarity
- * common: 70%, rare: 20%, epic: 8%, legendary: 2%
- */
 export async function getRandomQuote(): Promise<Quote> {
   const quotes = await getQuotes();
   if (quotes.length === 0) {
@@ -133,14 +128,12 @@ export async function getAchievements(): Promise<Achievement[]> {
   return readJson<Achievement[]>(ACHIEVEMENTS_PATH);
 }
 
-// ===== Utility functions =====
+// ===== Utility =====
 
-/** Calculate current and longest streak from journal meta list (sync — pure computation) */
 export function calculateStreak(
   metas: JournalMeta[],
   restDays: string[] = [],
 ): { current: number; longest: number } {
-  // Treat rest days as having entries (they don't break the streak)
   const allDates = new Set([...metas.map(m => m.slug), ...restDays]);
 
   if (metas.length === 0 && restDays.length === 0) return { current: 0, longest: 0 };

@@ -1,18 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllJournalMetas, getJournalBySlug, getSiteMeta } from '@/lib/data-utils';
 import { getUserConfig } from '@/lib/user-config';
+import { getSessionUserId } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
+  const userId = await getSessionUserId();
+  if (!userId) {
+    return NextResponse.json({ error: '请先登录' }, { status: 401 });
+  }
+
   try {
     const format = request.nextUrl.searchParams.get('format') || 'json';
-    const metas = await getAllJournalMetas();
-    const siteMeta = await getSiteMeta();
-    const userConfig = await getUserConfig();
+    const metas = await getAllJournalMetas(userId);
+    const siteMeta = await getSiteMeta(userId);
+    const userConfig = await getUserConfig(userId);
 
     if (format === 'markdown') {
-      // Export all entries as concatenated markdown
       const entries = await Promise.all(
-        metas.map(m => getJournalBySlug(m.slug)),
+        metas.map(m => getJournalBySlug(userId, m.slug)),
       );
       const mdParts = entries
         .filter(Boolean)
@@ -41,10 +46,9 @@ ${e!.content}
       });
     }
 
-    // Default: JSON export
     const entries = await Promise.all(
       metas.map(async m => {
-        const entry = await getJournalBySlug(m.slug);
+        const entry = await getJournalBySlug(userId, m.slug);
         return entry;
       }),
     );

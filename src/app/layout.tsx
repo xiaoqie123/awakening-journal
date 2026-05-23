@@ -3,6 +3,7 @@ import { Noto_Serif_SC } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { getSessionUserId } from "@/lib/auth/session";
 
 const notoSerifSC = Noto_Serif_SC({
   subsets: ["latin"],
@@ -53,11 +54,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const userId = await getSessionUserId();
   return (
     <html lang="zh-CN" suppressHydrationWarning className={notoSerifSC.variable}>
       <head>
@@ -69,7 +71,7 @@ export default function RootLayout({
       </head>
       <body className={`min-h-screen bg-warm-100 dark:bg-deep-900 text-ink dark:text-[#E8E6E3] transition-colors duration-300 ${notoSerifSC.variable}`}>
         <ThemeProvider>
-          <Navigation />
+          <Navigation userId={userId ?? undefined} />
 
           <main className="pt-16 pb-24 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
             {children}

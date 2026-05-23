@@ -2,13 +2,17 @@ import { NextResponse } from 'next/server';
 import { getAllJournalMetas, calculateStreak } from '@/lib/data-utils';
 import { writeJson } from '@/lib/storage';
 import { getUserConfig } from '@/lib/user-config';
-
-const META_PATH = 'data/meta.json';
+import { getSessionUserId } from '@/lib/auth/session';
 
 export async function GET() {
+  const userId = await getSessionUserId();
+  if (!userId) {
+    return NextResponse.json({ error: '请先登录' }, { status: 401 });
+  }
+
   try {
-    const metas = await getAllJournalMetas();
-    const userConfig = await getUserConfig();
+    const metas = await getAllJournalMetas(userId);
+    const userConfig = await getUserConfig(userId);
     const { current: currentStreak, longest: longestStreak } = calculateStreak(metas, userConfig.restDays);
 
     let totalEntries = metas.length;
@@ -20,7 +24,6 @@ export async function GET() {
       streakHistory.push({ date: m.slug, hasEntry: true });
     }
 
-    // Add rest days to streak history
     for (const d of userConfig.restDays) {
       if (!streakHistory.find(s => s.date === d)) {
         streakHistory.push({ date: d, hasEntry: true });
@@ -37,7 +40,7 @@ export async function GET() {
       streakHistory,
     };
 
-    await writeJson(META_PATH, meta);
+    await writeJson(`data/users/${userId}/meta.json`, meta);
 
     return NextResponse.json({
       success: true,

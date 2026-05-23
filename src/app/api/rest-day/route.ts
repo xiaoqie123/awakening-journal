@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserConfig, updateUserConfig, getAvailableRestDays } from '@/lib/user-config';
+import { getSessionUserId } from '@/lib/auth/session';
 import { rateLimit, getRateLimitKey } from '@/lib/rate-limit';
 
 /** GET — check available rest days */
 export async function GET() {
+  const userId = await getSessionUserId();
+  if (!userId) {
+    return NextResponse.json({ error: '请先登录' }, { status: 401 });
+  }
+
   try {
-    const available = await getAvailableRestDays();
-    const config = await getUserConfig();
+    const available = await getAvailableRestDays(userId);
+    const config = await getUserConfig(userId);
     return NextResponse.json({
       available,
       used: config.restDaysUsed,
@@ -22,6 +28,11 @@ export async function GET() {
 
 /** POST — request a rest day for today */
 export async function POST(request: NextRequest) {
+  const userId = await getSessionUserId();
+  if (!userId) {
+    return NextResponse.json({ error: '请先登录' }, { status: 401 });
+  }
+
   // Rate limit: 5 requests per minute per IP
   const rlKey = getRateLimitKey(request);
   const rl = rateLimit(rlKey, 5, 60_000);
@@ -34,11 +45,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { date } = body; // optional: specify a date, defaults to today
+    const { date } = body;
     const targetDate = date || new Date().toISOString().slice(0, 10);
 
-    const config = await getUserConfig();
-    const available = await getAvailableRestDays();
+    const config = await getUserConfig(userId);
+    const available = await getAvailableRestDays(userId);
 
     if (available <= 0) {
       return NextResponse.json(
@@ -54,7 +65,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const updated = await updateUserConfig({
+    const updated = await updateUserConfig(userId, {
       restDaysUsed: config.restDaysUsed + 1,
       restDays: [...config.restDays, targetDate],
     });

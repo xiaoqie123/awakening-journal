@@ -1,5 +1,6 @@
 import { getAllJournalMetas, getSiteMeta, getAchievements, calculateStreak } from '@/lib/data-utils';
 import { getUserConfig, getAvailableRestDays } from '@/lib/user-config';
+import { verifySession } from '@/lib/auth/session';
 import { Flame, BookOpen, FileText, Calendar, Trophy, Lock, Download } from 'lucide-react';
 import { Achievement } from '@/lib/types';
 import RestDayManager from '@/components/RestDayManager';
@@ -8,11 +9,12 @@ import FootprintsBanner from '@/components/FootprintsBanner';
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  const metas = await getAllJournalMetas();
-  const siteMeta = await getSiteMeta();
+  const { userId } = await verifySession();
+  const metas = await getAllJournalMetas(userId);
+  const siteMeta = await getSiteMeta(userId);
   const achievements = await getAchievements();
-  const userConfig = await getUserConfig();
-  const availableRestDays = await getAvailableRestDays();
+  const userConfig = await getUserConfig(userId);
+  const availableRestDays = await getAvailableRestDays(userId);
 
   const entryCount = metas.length;
   const showAdvanced = entryCount >= 3;

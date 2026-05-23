@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Tag } from 'lucide-react';
 import { getJournalBySlug, getAllJournalMetas } from '@/lib/data-utils';
+import { verifySession } from '@/lib/auth/session';
 import { MOOD_LABELS } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
@@ -11,8 +12,9 @@ interface Props {
 }
 
 export default async function JournalDetailPage({ params }: Props) {
+  const { userId } = await verifySession();
   const { slug } = await params;
-  const entry = await getJournalBySlug(slug);
+  const entry = await getJournalBySlug(userId, slug);
 
   if (!entry) notFound();
 
