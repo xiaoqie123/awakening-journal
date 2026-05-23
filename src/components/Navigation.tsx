@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { PenLine, LayoutDashboard, Library, Home, Menu, X, LogOut, User } from 'lucide-react';
+import { PenLine, LayoutDashboard, Library, Home, Menu, X, LogOut, User, Info } from 'lucide-react';
 import { useState } from 'react';
 import ThemeToggle from './ThemeToggle';
 import { logout } from '@/lib/auth/actions';
@@ -12,6 +12,7 @@ const navItems = [
   { href: '/write', label: '记录', icon: PenLine },
   { href: '/dashboard', label: '仪表盘', icon: LayoutDashboard },
   { href: '/library', label: '图书馆', icon: Library },
+  { href: '/about', label: '关于', icon: Info },
 ];
 
 export default function Navigation({ userId }: { userId?: string }) {

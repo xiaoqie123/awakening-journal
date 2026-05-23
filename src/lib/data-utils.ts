@@ -20,7 +20,7 @@ function extractSnippet(content: string, maxLen = 100): string {
     .replace(/\n+/g, ' ')
     .trim()
     .slice(0, maxLen)
-    .replace(/\\s+\\S*$/, '');
+    .replace(/\s+\S*$/, '');
 }
 
 async function readJournalCache(userId: string): Promise<JournalMeta[] | null> {

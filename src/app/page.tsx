@@ -144,7 +144,7 @@ export default async function HomePage() {
       )}
 
       {/* ===== Wisdom quote ===== */}
-      {!isNewUser && (
+      {(
         <section>
           <div className={`relative overflow-hidden rounded-2xl p-6 sm:p-8 bg-white dark:bg-deep-800 border border-warm-200 dark:border-deep-700 shadow-sm ${isRareQuote ? 'border-sage-300 dark:border-sage-500/30' : ''}`}>
             {isRareQuote && (
