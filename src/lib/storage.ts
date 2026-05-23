@@ -11,9 +11,17 @@ async function blobGet(pathname: string): Promise<string | null> {
   const result = await list({ prefix: pathname, limit: 1 });
   const match = result.blobs.find(b => b.pathname === pathname);
   if (!match) return null;
+  // Private store URLs from list() include a signed token; public store URLs are directly accessible
   const res = await fetch(match.url);
-  if (!res.ok) return null;
-  return res.text();
+  if (res.ok) return res.text();
+  // If direct fetch fails (possible with private stores), try with Authorization header
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    const authRes = await fetch(match.url, {
+      headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+    });
+    if (authRes.ok) return authRes.text();
+  }
+  return null;
 }
 
 async function blobPut(pathname: string, content: string): Promise<void> {
