@@ -126,7 +126,7 @@ export default function RewardModal({ quote, onClose }: RewardModalProps) {
 
           {/* Feedback line */}
           <p className="mt-4 text-sm text-sage-500 dark:text-sage-400 font-medium">
-            记录完成，你又向觉醒迈进了一步。
+            完成记录，觉察已发生。
           </p>
         </div>
       </div>

@@ -1,32 +1,32 @@
 import Link from 'next/link';
-import { PenLine, Flame, BookOpen, TrendingUp, ArrowRight, Library } from 'lucide-react';
+import { PenLine, Flame, TrendingUp, Library } from 'lucide-react';
 import { getSiteMeta, getRandomQuote, getPrompts } from '@/lib/data-utils';
+import { getUserConfig } from '@/lib/user-config';
 import SubscribeForm from '@/components/SubscribeForm';
+import RandomLookLink from '@/components/RandomLookLink';
 
 export default async function HomePage() {
   const meta = await getSiteMeta();
   const quote = await getRandomQuote();
   const prompts = await getPrompts();
+  const userConfig = await getUserConfig();
   const todayPrompt = prompts[Math.floor(Math.random() * prompts.length)] ||
     { id: 'default', text: '今天我觉察到了什么？' };
 
   const isRareQuote = quote.rarity === 'epic' || quote.rarity === 'legendary';
 
   return (
-    <div className="space-y-10">
-      {/* ===== Hero / Prompt ===== */}
-      <section className="text-center py-8 sm:py-16">
-        <p className="text-sm uppercase tracking-widest text-sage-500 dark:text-sage-400 mb-4">
-          每日觉醒记录
-        </p>
-        <h1 className="text-2xl sm:text-3xl font-heading font-medium text-ink dark:text-[#E8E6E3] mb-3 max-w-reading mx-auto leading-relaxed">
+    <div className="space-y-8">
+      {/* ===== Hero / Prompt (主视觉，居上) ===== */}
+      <section className="text-center py-10 sm:py-16">
+        <h1 className="text-3xl sm:text-4xl font-heading font-medium text-ink dark:text-[#E8E6E3] mb-4 max-w-reading mx-auto leading-relaxed">
           「{todayPrompt.text}」
         </h1>
-        <p className="text-ink-muted dark:text-[#9A9A9E] mb-8 text-sm">
-          哪怕只写一句话，觉察就已发生。
+        <p className="text-sm text-ink-muted dark:text-[#9A9A9E] mb-8">
+          今天，从这里开始觉察。
         </p>
 
-        {/* Fogg Behavior Model: large CTA reduces friction */}
+        {/* CTA button */}
         <Link
           href="/write"
           className="
@@ -41,42 +41,12 @@ export default async function HomePage() {
           "
         >
           <PenLine size={22} />
-          <span>开始今日觉醒记录</span>
-          <ArrowRight size={18} className="animate-pulse-gentle" />
+          <span>开始记录</span>
         </Link>
-      </section>
 
-      {/* ===== Stats cards ===== */}
-      <section className="grid grid-cols-2 gap-4 sm:gap-6">
-        {/* Streak */}
-        <div className="bg-white dark:bg-deep-800 rounded-2xl p-5 sm:p-6 shadow-sm border border-warm-200 dark:border-deep-700 hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-2 text-ink-muted dark:text-[#9A9A9E] text-sm mb-2">
-            <Flame size={16} className="text-gold-500" />
-            <span>连续记录</span>
-          </div>
-          <p className="text-3xl sm:text-4xl font-bold text-ink dark:text-[#E8E6E3]">
-            {meta.currentStreak}
-            <span className="text-lg font-normal text-ink-muted ml-1">天</span>
-          </p>
-          {meta.currentStreak > 0 && (
-            <p className="text-xs text-verdant-500 mt-1">
-              🔥 Streak 进行中
-            </p>
-          )}
-        </div>
-
-        {/* Total words */}
-        <div className="bg-white dark:bg-deep-800 rounded-2xl p-5 sm:p-6 shadow-sm border border-warm-200 dark:border-deep-700 hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-2 text-ink-muted dark:text-[#9A9A9E] text-sm mb-2">
-            <BookOpen size={16} />
-            <span>总字数</span>
-          </div>
-          <p className="text-3xl sm:text-4xl font-bold text-ink dark:text-[#E8E6E3]">
-            {meta.totalWords.toLocaleString()}
-          </p>
-          <p className="text-xs text-ink-muted mt-1">
-            {meta.totalEntries} 篇日记
-          </p>
+        {/* Subtle random look link */}
+        <div className="mt-3">
+          <RandomLookLink />
         </div>
       </section>
 
@@ -99,8 +69,8 @@ export default async function HomePage() {
           )}
 
           <div className="relative z-10">
-            <p className="text-xs uppercase tracking-wider text-ink-light dark:text-[#6B6B70] mb-3">
-              ✨ 今日智慧语录
+            <p className="text-xs text-ink-light dark:text-[#6B6B70] mb-3">
+              ✨ 智慧语录
               {quote.rarity === 'legendary' && ' — 稀有启示'}
               {quote.rarity === 'epic' && ' — 珍贵洞见'}
             </p>
@@ -116,16 +86,16 @@ export default async function HomePage() {
       </section>
 
       {/* ===== Quick links ===== */}
-      <section className="grid sm:grid-cols-2 gap-4">
+      <section className="grid sm:grid-cols-2 gap-3">
         <Link
           href="/dashboard"
           className="flex items-center justify-between p-4 rounded-xl bg-white dark:bg-deep-800 border border-warm-200 dark:border-deep-700 hover:border-sage-300 dark:hover:border-sage-500/30 transition-all group"
         >
           <div className="flex items-center gap-3">
             <TrendingUp size={18} className="text-sage-500" />
-            <span className="text-sm font-medium">查看成长仪表盘</span>
+            <span className="text-sm">查看成长仪表盘</span>
           </div>
-          <ArrowRight size={16} className="text-ink-light group-hover:translate-x-1 transition-transform" />
+          <span className="text-xs text-ink-light group-hover:translate-x-1 transition-transform">→</span>
         </Link>
 
         <Link
@@ -134,9 +104,9 @@ export default async function HomePage() {
         >
           <div className="flex items-center gap-3">
             <Library size={18} className="text-sage-500" />
-            <span className="text-sm font-medium">浏览内容图书馆</span>
+            <span className="text-sm">浏览内容图书馆</span>
           </div>
-          <ArrowRight size={16} className="text-ink-light group-hover:translate-x-1 transition-transform" />
+          <span className="text-xs text-ink-light group-hover:translate-x-1 transition-transform">→</span>
         </Link>
       </section>
 
@@ -148,6 +118,19 @@ export default async function HomePage() {
         </p>
         <SubscribeForm />
       </section>
+
+      {/* ===== Subtle streak indicator (底部弱化) ===== */}
+      <div className="text-center py-4">
+        <p className="text-xs text-ink-light dark:text-[#6B6B70] inline-flex items-center gap-1">
+          <Flame size={12} className={meta.currentStreak > 0 ? 'text-gold-400' : 'text-ink-light'} />
+          已连续记录 {meta.currentStreak} 天
+          {userConfig.restDays.length > 0 && (
+            <span className="text-ink-light/60">
+              · 本月已休 {userConfig.restDaysUsed}/2 天
+            </span>
+          )}
+        </p>
+      </div>
     </div>
   );
 }

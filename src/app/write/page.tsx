@@ -128,6 +128,11 @@ export default function WritePage() {
         </div>
       </div>
 
+      {/* Gentle encouragement */}
+      <p className="text-xs text-ink-light dark:text-[#6B6B70] text-center">
+        ✍️ 哪怕只写一句，也是觉醒。
+      </p>
+
       {/* Prompt selector */}
       <div className="relative">
         <button

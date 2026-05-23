@@ -136,10 +136,16 @@ export async function getAchievements(): Promise<Achievement[]> {
 // ===== Utility functions =====
 
 /** Calculate current and longest streak from journal meta list (sync — pure computation) */
-export function calculateStreak(metas: JournalMeta[]): { current: number; longest: number } {
-  if (metas.length === 0) return { current: 0, longest: 0 };
+export function calculateStreak(
+  metas: JournalMeta[],
+  restDays: string[] = [],
+): { current: number; longest: number } {
+  // Treat rest days as having entries (they don't break the streak)
+  const allDates = new Set([...metas.map(m => m.slug), ...restDays]);
 
-  const dates = metas.map(m => m.slug).sort().reverse();
+  if (metas.length === 0 && restDays.length === 0) return { current: 0, longest: 0 };
+
+  const dates = [...allDates].sort().reverse();
 
   let longest = 0;
   let tempStreak = 1;
@@ -148,8 +154,8 @@ export function calculateStreak(metas: JournalMeta[]): { current: number; longes
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
 
   let current = 0;
-  const hasToday = dates.includes(today);
-  const hasYesterday = dates.includes(yesterday);
+  const hasToday = allDates.has(today);
+  const hasYesterday = allDates.has(yesterday);
 
   if (hasToday || hasYesterday) {
     current = 1;
@@ -159,7 +165,7 @@ export function calculateStreak(metas: JournalMeta[]): { current: number; longes
     while (true) {
       checkDate.setDate(checkDate.getDate() - 1);
       const dateStr = checkDate.toISOString().slice(0, 10);
-      if (dates.includes(dateStr)) {
+      if (allDates.has(dateStr)) {
         current++;
       } else {
         break;

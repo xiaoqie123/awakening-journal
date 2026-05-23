@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSiteMeta, updateSiteMeta, getRandomQuote, calculateStreak, getAllJournalMetas } from '@/lib/data-utils';
+import { getUserConfig } from '@/lib/user-config';
 import { writeFile } from '@/lib/storage';
 import { Quote } from '@/lib/types';
 
@@ -45,7 +46,8 @@ export async function POST(request: NextRequest) {
     // Update site metadata
     const currentMeta = await getSiteMeta();
     const allMetas = await getAllJournalMetas();
-    const { current: newStreak, longest: newLongest } = calculateStreak(allMetas);
+    const userConfig = await getUserConfig();
+    const { current: newStreak, longest: newLongest } = calculateStreak(allMetas, userConfig.restDays);
 
     const isNewEntry = currentMeta.lastEntryDate !== slug;
 

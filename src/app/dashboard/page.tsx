@@ -1,11 +1,18 @@
-import { getAllJournalMetas, getSiteMeta, getAchievements } from '@/lib/data-utils';
+import { getAllJournalMetas, getSiteMeta, getAchievements, calculateStreak } from '@/lib/data-utils';
+import { getUserConfig, getAvailableRestDays } from '@/lib/user-config';
 import { Flame, BookOpen, FileText, Calendar, Trophy, Lock } from 'lucide-react';
 import { Achievement } from '@/lib/types';
+import RestDayManager from '@/components/RestDayManager';
 
 export default async function DashboardPage() {
   const metas = await getAllJournalMetas();
   const siteMeta = await getSiteMeta();
   const achievements = await getAchievements();
+  const userConfig = await getUserConfig();
+  const availableRestDays = await getAvailableRestDays();
+
+  // Re-calculate streak with rest days for display consistency
+  const { current: displayStreak } = calculateStreak(metas, userConfig.restDays);
 
   // Mood data (last 30 entries, chronological order)
   const moodData = metas.slice(0, 30).reverse();
@@ -31,6 +38,7 @@ export default async function DashboardPage() {
   const last7DaysStatus = last7Days.map(date => ({
     date,
     hasEntry: metas.some(m => m.slug === date),
+    isRest: userConfig.restDays.includes(date),
   }));
 
   // Achievement unlock checker
@@ -51,14 +59,14 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-heading font-medium">个人成长仪表盘</h1>
+      <h1 className="text-2xl font-heading font-medium">成长记录</h1>
 
       {/* Stats cards */}
       <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard
-          icon={<Flame className="text-gold-500" />}
+          icon={<Flame className="text-gold-400" />}
           label="连续记录"
-          value={`${siteMeta.currentStreak}天`}
+          value={`${displayStreak}天`}
           sub={`最长 ${siteMeta.longestStreak}天`}
         />
         <StatCard
@@ -80,9 +88,20 @@ export default async function DashboardPage() {
         />
       </section>
 
+      {/* Rest day manager */}
+      <RestDayManager
+        initial={{
+          available: availableRestDays,
+          used: userConfig.restDaysUsed,
+          max: 2,
+          restDays: userConfig.restDays,
+          resetMonth: userConfig.restDaysResetMonth,
+        }}
+      />
+
       {/* 7-day heatmap */}
       <section className="bg-white dark:bg-deep-800 rounded-2xl p-5 sm:p-6 border border-warm-200 dark:border-deep-700">
-        <h2 className="text-sm font-medium mb-4">最近7天记录情况</h2>
+        <h2 className="text-sm font-medium mb-4">最近7天</h2>
         <div className="flex gap-2 justify-center sm:gap-3">
           {last7DaysStatus.map((day) => (
             <div key={day.date} className="text-center">
@@ -92,12 +111,14 @@ export default async function DashboardPage() {
                   transition-all duration-300
                   ${day.hasEntry
                     ? 'bg-sage-500 text-white shadow-md shadow-sage-500/20'
-                    : 'bg-warm-200 dark:bg-deep-700 text-ink-light'
+                    : day.isRest
+                      ? 'bg-gold-100 dark:bg-gold-500/10 text-gold-500 border border-gold-300 dark:border-gold-500/20'
+                      : 'bg-warm-200 dark:bg-deep-700 text-ink-light'
                   }
                 `}
-                title={day.date}
+                title={day.date + (day.isRest ? ' (休日)' : '')}
               >
-                {day.hasEntry ? '✓' : '·'}
+                {day.hasEntry ? '✓' : day.isRest ? '☁' : '·'}
               </div>
               <p className="text-xs text-ink-light mt-1">
                 {['日', '一', '二', '三', '四', '五', '六'][new Date(day.date).getDay()]}
@@ -105,6 +126,9 @@ export default async function DashboardPage() {
             </div>
           ))}
         </div>
+        <p className="text-xs text-ink-light mt-3 text-center">
+          ☁ 休日 &nbsp; ✓ 已记录 &nbsp; · 未记录
+        </p>
       </section>
 
       {/* Mood chart */}
@@ -132,8 +156,8 @@ export default async function DashboardPage() {
       {/* Achievements wall */}
       <section className="bg-white dark:bg-deep-800 rounded-2xl p-5 sm:p-6 border border-warm-200 dark:border-deep-700">
         <h2 className="text-sm font-medium mb-4 flex items-center gap-2">
-          <Trophy size={16} className="text-gold-500" />
-          成就徽章
+          <Trophy size={16} className="text-gold-400" />
+          里程碑
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {achievements.map(ach => {
@@ -156,7 +180,7 @@ export default async function DashboardPage() {
                 <p className="text-xs text-ink-light mt-1">{ach.description}</p>
                 {unlocked && (
                   <span className="inline-block mt-2 text-xs px-2 py-0.5 rounded-full bg-sage-100 dark:bg-sage-500/20 text-sage-600 dark:text-sage-400">
-                    已解锁
+                    已达成
                   </span>
                 )}
               </div>
@@ -168,7 +192,7 @@ export default async function DashboardPage() {
       {/* Tag cloud */}
       {topTags.length > 0 && (
         <section className="bg-white dark:bg-deep-800 rounded-2xl p-5 sm:p-6 border border-warm-200 dark:border-deep-700">
-          <h2 className="text-sm font-medium mb-4">关键词云</h2>
+          <h2 className="text-sm font-medium mb-4">关键词</h2>
           <div className="flex flex-wrap gap-2">
             {topTags.map(([tag, count]) => {
               const size = Math.min(1.5, 0.75 + count * 0.08);

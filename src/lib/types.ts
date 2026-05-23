@@ -76,6 +76,13 @@ export interface SiteMeta {
   streakHistory: { date: string; hasEntry: boolean }[];
 }
 
+/** User-level configuration for rest days */
+export interface UserConfig {
+  restDaysUsed: number;
+  restDaysResetMonth: string;
+  restDays: string[];
+}
+
 /** Anonymous footprint of fellow travelers */
 export interface Footprint {
   id: string;
