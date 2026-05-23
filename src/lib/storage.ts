@@ -2,7 +2,8 @@ import { put, list, del } from '@vercel/blob';
 import fs from 'fs';
 import path from 'path';
 
-const isVercel = !!process.env.BLOB_READ_WRITE_TOKEN;
+// Vercel sets VERCEL=1 automatically; BLOB_READ_WRITE_TOKEN is set by Blob Store integration
+const isVercel = !!(process.env.BLOB_READ_WRITE_TOKEN || process.env.VERCEL);
 
 // ===== Low-level read/write =====
 
@@ -52,6 +53,9 @@ export async function readFile(relativePath: string): Promise<string> {
 /** Write file content */
 export async function writeFile(relativePath: string, content: string): Promise<void> {
   if (isVercel) {
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      throw new Error('BLOB_READ_WRITE_TOKEN not set — connect a Blob Store in Vercel dashboard');
+    }
     await blobPut(relativePath, content);
     return;
   }
