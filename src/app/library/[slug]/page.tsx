@@ -4,9 +4,6 @@ import { ArrowLeft, Calendar, Tag } from 'lucide-react';
 import { getJournalBySlug, getAllJournalMetas } from '@/lib/data-utils';
 import { verifySession } from '@/lib/auth/session';
 import { MOOD_LABELS } from '@/lib/constants';
-
-export const dynamic = 'force-dynamic';
-
 interface Props {
   params: Promise<{ slug: string }>;
 }

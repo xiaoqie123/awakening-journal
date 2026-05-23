@@ -2,7 +2,7 @@
 
 import { createSession, deleteSession } from '@/lib/auth/session';
 import { getUserByEmail, createUser, verifyPassword } from '@/lib/auth/users';
-import { redirect } from 'next/navigation';
+import { isRedirectError } from 'next/dist/client/components/redirect-error';
 
 type FormState = {
   errors?: { email?: string[]; password?: string[]; name?: string[] };
@@ -26,14 +26,20 @@ export async function register(prevState: FormState, formData: FormData): Promis
     return { errors };
   }
 
-  const existing = await getUserByEmail(email);
-  if (existing) {
-    return { message: '该邮箱已注册' };
-  }
+  try {
+    const existing = await getUserByEmail(email);
+    if (existing) {
+      return { message: '该邮箱已注册' };
+    }
 
-  const user = await createUser(email, password, name || undefined);
-  await createSession(user.id);
-  redirect('/');
+    const user = await createUser(email, password, name || undefined);
+    await createSession(user.id);
+  } catch (error) {
+    if (isRedirectError(error)) throw error;
+    const msg = error instanceof Error ? error.message : String(error);
+    return { message: `注册失败: ${msg}` };
+  }
+  return {};
 }
 
 export async function login(prevState: FormState, formData: FormData): Promise<FormState> {
@@ -44,21 +50,28 @@ export async function login(prevState: FormState, formData: FormData): Promise<F
     return { message: '请填写邮箱和密码' };
   }
 
-  const user = await getUserByEmail(email);
-  if (!user) {
-    return { message: '邮箱或密码不正确' };
-  }
+  try {
+    const user = await getUserByEmail(email);
+    if (!user) {
+      return { message: '邮箱或密码不正确' };
+    }
 
-  const valid = await verifyPassword(user, password);
-  if (!valid) {
-    return { message: '邮箱或密码不正确' };
-  }
+    const valid = await verifyPassword(user, password);
+    if (!valid) {
+      return { message: '邮箱或密码不正确' };
+    }
 
-  await createSession(user.id);
-  redirect('/');
+    await createSession(user.id);
+  } catch (error) {
+    if (isRedirectError(error)) throw error;
+    const msg = error instanceof Error ? error.message : String(error);
+    return { message: `登录失败: ${msg}` };
+  }
+  return {};
 }
 
 export async function logout() {
   await deleteSession();
+  const { redirect } = await import('next/navigation');
   redirect('/login');
 }

@@ -1,12 +1,11 @@
 import { getAllJournalMetas, getSiteMeta, getAchievements, calculateStreak } from '@/lib/data-utils';
 import { getUserConfig, getAvailableRestDays } from '@/lib/user-config';
 import { verifySession } from '@/lib/auth/session';
-import { Flame, BookOpen, FileText, Calendar, Trophy, Lock, Download } from 'lucide-react';
+import { Flame, BookOpen, FileText, Calendar, Trophy, Lock, Download, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
 import { Achievement } from '@/lib/types';
 import RestDayManager from '@/components/RestDayManager';
 import FootprintsBanner from '@/components/FootprintsBanner';
-
-export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
   const { userId } = await verifySession();
@@ -105,6 +104,46 @@ export default async function DashboardPage() {
           sub="/ 5"
         />
       </section>
+
+      {/* Recent entries */}
+      {metas.length > 0 && (
+        <section className="bg-white dark:bg-deep-800 rounded-2xl p-5 sm:p-6 border border-warm-200 dark:border-deep-700">
+          <h2 className="text-sm font-medium mb-4">最近记录</h2>
+          <div className="space-y-2">
+            {metas.slice(0, 5).map(entry => (
+              <Link
+                key={entry.slug}
+                href={`/library/${entry.slug}`}
+                className="flex items-center gap-3 p-3 rounded-xl hover:bg-warm-50 dark:hover:bg-deep-700 transition-colors group"
+              >
+                <span className="text-lg flex-shrink-0">
+                  {['', '😔', '😕', '😐', '🙂', '😊'][entry.mood] || '😐'}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-ink dark:text-[#E8E6E3] truncate">
+                    {entry.title || entry.slug}
+                  </p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-xs text-ink-light">{entry.slug}</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-sage-50 dark:bg-sage-500/10 text-sage-600 dark:text-sage-400">
+                      {entry.category}
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight size={16} className="text-ink-light flex-shrink-0 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            ))}
+          </div>
+          {metas.length > 5 && (
+            <Link
+              href="/library"
+              className="inline-flex items-center gap-1 mt-4 text-xs text-sage-500 hover:text-sage-600 transition-colors"
+            >
+              查看全部 {metas.length} 篇 →
+            </Link>
+          )}
+        </section>
+      )}
 
       {/* Rest day manager */}
       <RestDayManager

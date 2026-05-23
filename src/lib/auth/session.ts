@@ -3,10 +3,6 @@ import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
-
-const secretKey = process.env.SESSION_SECRET;
-const encodedKey = new TextEncoder().encode(secretKey);
-
 import type { JWTPayload } from 'jose';
 
 interface SessionPayload extends JWTPayload {
@@ -14,17 +10,29 @@ interface SessionPayload extends JWTPayload {
   expiresAt: Date;
 }
 
+function getEncodedKey(): Uint8Array {
+  const key = process.env.SESSION_SECRET;
+  if (!key || key.length < 32) {
+    throw new Error(
+      'SESSION_SECRET is missing or too short. ' +
+      'Generate one with: openssl rand -base64 32\n' +
+      'Then add it to .env.local (local) or Vercel project Settings > Environment Variables (production)'
+    );
+  }
+  return new TextEncoder().encode(key);
+}
+
 export async function encrypt(payload: SessionPayload) {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
-    .sign(encodedKey);
+    .sign(getEncodedKey());
 }
 
 export async function decrypt(session: string | undefined = '') {
   try {
-    const { payload } = await jwtVerify(session, encodedKey, {
+    const { payload } = await jwtVerify(session, getEncodedKey(), {
       algorithms: ['HS256'],
     });
     return payload as unknown as SessionPayload;
