@@ -21,7 +21,7 @@ async function blobPut(pathname: string, content: string): Promise<void> {
   const existing = await list({ prefix: pathname, limit: 1 });
   const match = existing.blobs.find(b => b.pathname === pathname);
   if (match) await del(match.url);
-  await put(pathname, content, { access: 'public', addRandomSuffix: false });
+  await put(pathname, content, { access: 'private', addRandomSuffix: false });
 }
 
 async function blobExists(pathname: string): Promise<boolean> {
