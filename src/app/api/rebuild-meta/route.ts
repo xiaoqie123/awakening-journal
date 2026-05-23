@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAllJournalMetas, calculateStreak } from '@/lib/data-utils';
+import { getAllJournalMetas, calculateStreak, invalidateJournalCache } from '@/lib/data-utils';
 import { writeJson } from '@/lib/storage';
 import { getUserConfig } from '@/lib/user-config';
 import { getSessionUserId } from '@/lib/auth/session';
@@ -41,6 +41,9 @@ export async function GET() {
     };
 
     await writeJson(`data/users/${userId}/meta.json`, meta);
+
+    // Rebuild journal cache
+    try { await invalidateJournalCache(userId); } catch {}
 
     return NextResponse.json({
       success: true,

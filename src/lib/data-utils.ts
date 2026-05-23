@@ -5,14 +5,38 @@ import { readFile, writeFile, readJson, writeJson, fileExists, listDir } from '.
 // ===== Path helpers =====
 function journalDir(userId: string) { return `data/users/${userId}/journal`; }
 function metaPath(userId: string) { return `data/users/${userId}/meta.json`; }
+function cachePath(userId: string) { return `data/users/${userId}/journal-cache.json`; }
 const QUOTES_PATH = 'data/quotes.json';
 const PROMPTS_PATH = 'data/prompts.json';
 const ACHIEVEMENTS_PATH = 'data/achievements.json';
 const FOOTPRINTS_PATH = 'data/footprints.json';
 
-// ===== Journal reading =====
+// ===== Journal cache (avoids N+1 blob reads) =====
 
-export async function getAllJournalMetas(userId: string): Promise<JournalMeta[]> {
+function extractSnippet(content: string, maxLen = 100): string {
+  return content
+    .trim()
+    .replace(/^#.*$/gm, '')
+    .replace(/\n+/g, ' ')
+    .trim()
+    .slice(0, maxLen)
+    .replace(/\\s+\\S*$/, '');
+}
+
+async function readJournalCache(userId: string): Promise<JournalMeta[] | null> {
+  try {
+    if (await fileExists(cachePath(userId))) {
+      return await readJson<JournalMeta[]>(cachePath(userId));
+    }
+  } catch { /* cache corrupted, rebuild */ }
+  return null;
+}
+
+async function writeJournalCache(userId: string, metas: JournalMeta[]): Promise<void> {
+  await writeJson(cachePath(userId), metas);
+}
+
+async function buildJournalMetas(userId: string): Promise<JournalMeta[]> {
   const dir = journalDir(userId);
   const files = await listDir(dir);
   const mdFiles = files.filter(f => f.endsWith('.md'));
@@ -20,11 +44,12 @@ export async function getAllJournalMetas(userId: string): Promise<JournalMeta[]>
   const metas: JournalMeta[] = [];
   for (const file of mdFiles) {
     const raw = await readFile(file);
-    const { data } = matter(raw);
+    const { data, content } = matter(raw);
     const slug = file.replace(`${dir}/`, '').replace('.md', '');
     metas.push({
       slug,
       title: data.title || undefined,
+      snippet: extractSnippet(content),
       category: data.category || '其他',
       tags: data.tags || [],
       mood: data.mood || 3,
@@ -35,6 +60,22 @@ export async function getAllJournalMetas(userId: string): Promise<JournalMeta[]>
   }
 
   return metas.sort((a, b) => b.slug.localeCompare(a.slug));
+}
+
+// ===== Journal reading =====
+
+export async function getAllJournalMetas(userId: string): Promise<JournalMeta[]> {
+  const cached = await readJournalCache(userId);
+  if (cached) return cached;
+
+  const metas = await buildJournalMetas(userId);
+  await writeJournalCache(userId, metas);
+  return metas;
+}
+
+export async function invalidateJournalCache(userId: string): Promise<void> {
+  const metas = await buildJournalMetas(userId);
+  await writeJournalCache(userId, metas);
 }
 
 export async function getJournalBySlug(userId: string, slug: string): Promise<JournalEntry | null> {

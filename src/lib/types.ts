@@ -34,6 +34,7 @@ export interface Achievement {
 export interface JournalMeta {
   slug: string;
   title?: string;
+  snippet?: string;
   category: Category;
   tags: string[];
   mood: MoodLevel;

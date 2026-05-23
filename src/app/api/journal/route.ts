@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSiteMeta, updateSiteMeta, getRandomQuote, calculateStreak, getAllJournalMetas } from '@/lib/data-utils';
+import { getSiteMeta, updateSiteMeta, getRandomQuote, calculateStreak, getAllJournalMetas, invalidateJournalCache } from '@/lib/data-utils';
 import { getUserConfig } from '@/lib/user-config';
 import { getSessionUserId } from '@/lib/auth/session';
 import { writeFile } from '@/lib/storage';
@@ -59,6 +59,9 @@ export async function POST(request: NextRequest) {
 
     // Persist via storage layer (Vercel Blob in prod, fs in dev)
     await writeFile(filePath, fileContent);
+
+    // Invalidate journal cache so next read picks up new entry
+    invalidateJournalCache(userId).catch(() => {});
 
     // Update site metadata
     const currentMeta = await getSiteMeta(userId);

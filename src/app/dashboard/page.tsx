@@ -123,7 +123,12 @@ export default async function DashboardPage() {
                   <p className="text-sm font-medium text-ink dark:text-[#E8E6E3] truncate">
                     {entry.title || entry.slug}
                   </p>
-                  <div className="flex items-center gap-2 mt-0.5">
+                  {entry.snippet && (
+                    <p className="text-xs text-ink-light dark:text-[#6B6B70] mt-0.5 truncate">
+                      {entry.snippet}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs text-ink-light">{entry.slug}</span>
                     <span className="text-xs px-1.5 py-0.5 rounded bg-sage-50 dark:bg-sage-500/10 text-sage-600 dark:text-sage-400">
                       {entry.category}
