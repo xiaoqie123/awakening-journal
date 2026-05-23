@@ -3,8 +3,19 @@ import { getSiteMeta, updateSiteMeta, getRandomQuote, calculateStreak, getAllJou
 import { getUserConfig } from '@/lib/user-config';
 import { writeFile } from '@/lib/storage';
 import { Quote } from '@/lib/types';
+import { rateLimit, getRateLimitKey } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 10 writes per minute per IP
+  const rlKey = getRateLimitKey(request);
+  const rl = rateLimit(rlKey, 10, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: '请求过于频繁，请稍后再试' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } },
+    );
+  }
+
   try {
     const body = await request.json();
     const { content, mood, category, tags, prompt } = body;

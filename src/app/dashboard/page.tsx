@@ -1,8 +1,9 @@
 import { getAllJournalMetas, getSiteMeta, getAchievements, calculateStreak } from '@/lib/data-utils';
 import { getUserConfig, getAvailableRestDays } from '@/lib/user-config';
-import { Flame, BookOpen, FileText, Calendar, Trophy, Lock } from 'lucide-react';
+import { Flame, BookOpen, FileText, Calendar, Trophy, Lock, Download } from 'lucide-react';
 import { Achievement } from '@/lib/types';
 import RestDayManager from '@/components/RestDayManager';
+import FootprintsBanner from '@/components/FootprintsBanner';
 
 export default async function DashboardPage() {
   const metas = await getAllJournalMetas();
@@ -10,6 +11,9 @@ export default async function DashboardPage() {
   const achievements = await getAchievements();
   const userConfig = await getUserConfig();
   const availableRestDays = await getAvailableRestDays();
+
+  const entryCount = metas.length;
+  const showAdvanced = entryCount >= 3;
 
   // Re-calculate streak with rest days for display consistency
   const { current: displayStreak } = calculateStreak(metas, userConfig.restDays);
@@ -59,7 +63,17 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-heading font-medium">成长记录</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-heading font-medium">成长记录</h1>
+        <a
+          href="/api/export"
+          className="inline-flex items-center gap-1.5 text-xs text-ink-light hover:text-sage-500 transition-colors"
+          title="导出全部数据"
+        >
+          <Download size={14} />
+          导出数据
+        </a>
+      </div>
 
       {/* Stats cards */}
       <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -99,6 +113,9 @@ export default async function DashboardPage() {
         }}
       />
 
+      {/* Footprints */}
+      {showAdvanced && <FootprintsBanner />}
+
       {/* 7-day heatmap */}
       <section className="bg-white dark:bg-deep-800 rounded-2xl p-5 sm:p-6 border border-warm-200 dark:border-deep-700">
         <h2 className="text-sm font-medium mb-4">最近7天</h2>
@@ -132,7 +149,7 @@ export default async function DashboardPage() {
       </section>
 
       {/* Mood chart */}
-      {moodData.length > 0 && (
+      {showAdvanced && moodData.length > 0 && (
         <section className="bg-white dark:bg-deep-800 rounded-2xl p-5 sm:p-6 border border-warm-200 dark:border-deep-700">
           <h2 className="text-sm font-medium mb-4">情绪变化（最近记录）</h2>
           <div className="flex items-end gap-1 h-24">
@@ -154,43 +171,45 @@ export default async function DashboardPage() {
       )}
 
       {/* Achievements wall */}
-      <section className="bg-white dark:bg-deep-800 rounded-2xl p-5 sm:p-6 border border-warm-200 dark:border-deep-700">
-        <h2 className="text-sm font-medium mb-4 flex items-center gap-2">
-          <Trophy size={16} className="text-gold-400" />
-          里程碑
-        </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {achievements.map(ach => {
-            const unlocked = checkAchievement(ach);
-            return (
-              <div
-                key={ach.id}
-                className={`
-                  rounded-xl p-4 text-center border-2 transition-all duration-300
-                  ${unlocked
-                    ? 'border-sage-300 dark:border-sage-500/30 bg-sage-50/50 dark:bg-sage-500/5'
-                    : 'border-dashed border-warm-300 dark:border-deep-600 opacity-50'
-                  }
-                `}
-              >
-                <span className="text-3xl block mb-2">
-                  {unlocked ? ach.icon : <Lock size={24} className="mx-auto text-ink-light" />}
-                </span>
-                <p className="text-xs font-medium text-ink dark:text-[#E8E6E3]">{ach.name}</p>
-                <p className="text-xs text-ink-light mt-1">{ach.description}</p>
-                {unlocked && (
-                  <span className="inline-block mt-2 text-xs px-2 py-0.5 rounded-full bg-sage-100 dark:bg-sage-500/20 text-sage-600 dark:text-sage-400">
-                    已达成
+      {showAdvanced && (
+        <section className="bg-white dark:bg-deep-800 rounded-2xl p-5 sm:p-6 border border-warm-200 dark:border-deep-700">
+          <h2 className="text-sm font-medium mb-4 flex items-center gap-2">
+            <Trophy size={16} className="text-gold-400" />
+            里程碑
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {achievements.map(ach => {
+              const unlocked = checkAchievement(ach);
+              return (
+                <div
+                  key={ach.id}
+                  className={`
+                    rounded-xl p-4 text-center border-2 transition-all duration-300
+                    ${unlocked
+                      ? 'border-sage-300 dark:border-sage-500/30 bg-sage-50/50 dark:bg-sage-500/5'
+                      : 'border-dashed border-warm-300 dark:border-deep-600 opacity-50'
+                    }
+                  `}
+                >
+                  <span className="text-3xl block mb-2">
+                    {unlocked ? ach.icon : <Lock size={24} className="mx-auto text-ink-light" />}
                   </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </section>
+                  <p className="text-xs font-medium text-ink dark:text-[#E8E6E3]">{ach.name}</p>
+                  <p className="text-xs text-ink-light mt-1">{ach.description}</p>
+                  {unlocked && (
+                    <span className="inline-block mt-2 text-xs px-2 py-0.5 rounded-full bg-sage-100 dark:bg-sage-500/20 text-sage-600 dark:text-sage-400">
+                      已达成
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Tag cloud */}
-      {topTags.length > 0 && (
+      {showAdvanced && topTags.length > 0 && (
         <section className="bg-white dark:bg-deep-800 rounded-2xl p-5 sm:p-6 border border-warm-200 dark:border-deep-700">
           <h2 className="text-sm font-medium mb-4">关键词</h2>
           <div className="flex flex-wrap gap-2">
@@ -208,6 +227,18 @@ export default async function DashboardPage() {
               );
             })}
           </div>
+        </section>
+      )}
+
+      {/* New user encouragement */}
+      {!showAdvanced && entryCount > 0 && (
+        <section className="bg-white dark:bg-deep-800 rounded-2xl p-5 sm:p-6 border border-warm-200 dark:border-deep-700 text-center">
+          <p className="text-sm text-ink-muted dark:text-[#9A9A9E] leading-relaxed">
+            再写 {3 - entryCount} 篇记录，情绪趋势和里程碑将会在这里展示。
+          </p>
+          <p className="text-xs text-ink-light mt-2">
+            不着急，按你的节奏来。
+          </p>
         </section>
       )}
     </div>

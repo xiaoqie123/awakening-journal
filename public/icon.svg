@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1A1A1D"/>
+      <stop offset="100%" stop-color="#2D2D2F"/>
+    </linearGradient>
+    <linearGradient id="moon" x1="0" y1="0" x2="256" y2="256" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F5E6C8"/>
+      <stop offset="100%" stop-color="#E8D5A3"/>
+    </linearGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="url(#bg)"/>
+  <!-- Moon crescent -->
+  <circle cx="270" cy="230" r="100" fill="url(#moon)"/>
+  <circle cx="310" cy="200" r="70" fill="#2D2D2F"/>
+  <!-- Stars -->
+  <circle cx="140" cy="180" r="6" fill="#F5E6C8" opacity="0.8"/>
+  <circle cx="360" cy="340" r="4" fill="#F5E6C8" opacity="0.6"/>
+  <circle cx="100" cy="280" r="3" fill="#F5E6C8" opacity="0.5"/>
+  <circle cx="200" cy="100" r="5" fill="#F5E6C8" opacity="0.7"/>
+  <circle cx="380" cy="160" r="3.5" fill="#F5E6C8" opacity="0.5"/>
+  <circle cx="420" cy="250" r="4.5" fill="#F5E6C8" opacity="0.6"/>
+  <!-- Sage accent: awakening glow -->
+  <circle cx="256" cy="400" r="120" fill="#5B9A8B" opacity="0.15"/>
+  <circle cx="256" cy="400" r="60" fill="#5B9A8B" opacity="0.25"/>
+  <!-- Pen/quill hint -->
+  <path d="M200 370 Q180 350 190 320 L220 330 Q210 350 200 370Z" fill="#7DB9B0" opacity="0.6"/>
+</svg>

@@ -1,12 +1,19 @@
 import type { Metadata, Viewport } from "next";
+import { Noto_Serif_SC } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
+const notoSerifSC = Noto_Serif_SC({
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+  display: "swap",
+  variable: "--font-noto-serif-sc",
+});
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#FAF8F5" },
     { media: "(prefers-color-scheme: dark)", color: "#1A1A1D" },
@@ -20,10 +27,21 @@ export const metadata: Metadata = {
   authors: [{ name: "觉醒日志" }],
   manifest: "/manifest.json",
   applicationName: "觉醒日志",
+  icons: {
+    icon: [
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "觉醒日志",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
   formatDetection: {
     telephone: false,
@@ -41,8 +59,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN" suppressHydrationWarning>
-      <body className="min-h-screen bg-warm-100 dark:bg-deep-900 text-ink dark:text-[#E8E6E3] transition-colors duration-300">
+    <html lang="zh-CN" suppressHydrationWarning className={notoSerifSC.variable}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('awakening-theme')||(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.classList.toggle('dark',t==='dark')}catch(e){}})()`,
+          }}
+        />
+      </head>
+      <body className={`min-h-screen bg-warm-100 dark:bg-deep-900 text-ink dark:text-[#E8E6E3] transition-colors duration-300 ${notoSerifSC.variable}`}>
         <ThemeProvider>
           <Navigation />
 

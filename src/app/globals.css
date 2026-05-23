@@ -24,7 +24,7 @@
   --shadow: rgba(0, 0, 0, 0.04);
 
   --font-heading: 'PingFang SC', system-ui, -apple-system, sans-serif;
-  --font-body: Georgia, 'Noto Serif SC', serif;
+  --font-body: var(--font-noto-serif-sc), Georgia, 'Noto Serif SC', serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
   --line-height-body: 1.75;

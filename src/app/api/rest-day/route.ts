@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserConfig, updateUserConfig, getAvailableRestDays } from '@/lib/user-config';
+import { rateLimit, getRateLimitKey } from '@/lib/rate-limit';
 
 /** GET — check available rest days */
 export async function GET() {
@@ -21,6 +22,16 @@ export async function GET() {
 
 /** POST — request a rest day for today */
 export async function POST(request: NextRequest) {
+  // Rate limit: 5 requests per minute per IP
+  const rlKey = getRateLimitKey(request);
+  const rl = rateLimit(rlKey, 5, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: '请求过于频繁，请稍后再试' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } },
+    );
+  }
+
   try {
     const body = await request.json();
     const { date } = body; // optional: specify a date, defaults to today

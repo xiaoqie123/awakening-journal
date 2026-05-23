@@ -1,20 +1,39 @@
-import { put, list, del } from '@vercel/blob';
 import fs from 'fs';
 import path from 'path';
 
-// Vercel sets VERCEL=1 automatically; BLOB_READ_WRITE_TOKEN is set by Blob Store integration
-const isVercel = !!(process.env.BLOB_READ_WRITE_TOKEN || process.env.VERCEL);
+// VERCEL_URL is set by the platform to the deployment URL — only available in real Vercel environments
+const isVercel = !!process.env.VERCEL_URL;
 
-// ===== Low-level read/write =====
+// Lazy-load @vercel/blob to avoid SDK initialization during local builds
+type BlobAPI = {
+  put: typeof import('@vercel/blob').put;
+  list: typeof import('@vercel/blob').list;
+  del: typeof import('@vercel/blob').del;
+};
+
+let _blob: BlobAPI | null = null;
+async function getBlob(): Promise<BlobAPI> {
+  if (!_blob) {
+    _blob = await import('@vercel/blob');
+  }
+  return _blob;
+}
+
+// ===== Low-level blob operations =====
+
+function getContentType(pathname: string): string {
+  if (pathname.endsWith('.json')) return 'application/json; charset=utf-8';
+  if (pathname.endsWith('.md')) return 'text/markdown; charset=utf-8';
+  return 'text/plain; charset=utf-8';
+}
 
 async function blobGet(pathname: string): Promise<string | null> {
+  const { list } = await getBlob();
   const result = await list({ prefix: pathname, limit: 1 });
   const match = result.blobs.find(b => b.pathname === pathname);
   if (!match) return null;
-  // Private store URLs from list() include a signed token; public store URLs are directly accessible
   const res = await fetch(match.url);
   if (res.ok) return res.text();
-  // If direct fetch fails (possible with private stores), try with Authorization header
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     const authRes = await fetch(match.url, {
       headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
@@ -25,19 +44,25 @@ async function blobGet(pathname: string): Promise<string | null> {
 }
 
 async function blobPut(pathname: string, content: string): Promise<void> {
-  // Delete old blob with same pathname before writing (overwrite)
+  const { put, list, del } = await getBlob();
   const existing = await list({ prefix: pathname, limit: 1 });
   const match = existing.blobs.find(b => b.pathname === pathname);
   if (match) await del(match.url);
-  await put(pathname, content, { access: 'private', addRandomSuffix: false });
+  await put(pathname, content, {
+    access: 'private',
+    addRandomSuffix: false,
+    contentType: getContentType(pathname),
+  });
 }
 
 async function blobExists(pathname: string): Promise<boolean> {
+  const { list } = await getBlob();
   const result = await list({ prefix: pathname, limit: 1 });
   return result.blobs.some(b => b.pathname === pathname);
 }
 
 async function blobList(prefix: string): Promise<string[]> {
+  const { list } = await getBlob();
   const result = await list({ prefix, limit: 500 });
   return result.blobs.map(b => b.pathname);
 }
@@ -49,7 +74,6 @@ export async function readFile(relativePath: string): Promise<string> {
   if (isVercel) {
     const content = await blobGet(relativePath);
     if (content !== null) return content;
-    // Fallback: try local bundled file
     const fullPath = path.join(process.cwd(), relativePath);
     if (fs.existsSync(fullPath)) return fs.readFileSync(fullPath, 'utf-8');
     throw new Error(`File not found: ${relativePath}`);
@@ -83,7 +107,7 @@ export async function fileExists(relativePath: string): Promise<boolean> {
 export async function listDir(relativeDir: string): Promise<string[]> {
   if (isVercel) {
     const files = await blobList(relativeDir);
-    return files.filter(f => f !== relativeDir); // exclude dir entry itself
+    return files.filter(f => f !== relativeDir);
   }
   const fullDir = path.join(process.cwd(), relativeDir);
   if (!fs.existsSync(fullDir)) return [];

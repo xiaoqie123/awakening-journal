@@ -1,11 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save, ChevronDown, X, Plus } from 'lucide-react';
+import { ArrowLeft, Save, ChevronDown, X, Plus, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { MoodLevel, Category, Quote } from '@/lib/types';
 import RewardModal from '@/components/RewardModal';
+import MarkdownPreview from '@/components/MarkdownPreview';
+
+const DRAFT_KEY = 'awakening-draft';
+const SAVE_DELAY = 1500; // debounce 1.5s
+
+interface Draft {
+  content: string;
+  mood: MoodLevel;
+  category: Category;
+  tags: string[];
+}
 
 const CATEGORIES: Category[] = ['认知觉醒', '多巴胺管理', '财富心态', '元认知', '冥想与专注', '其他'];
 const MOOD_LABELS: Record<MoodLevel, string> = {
@@ -16,8 +27,38 @@ const MOOD_LABELS: Record<MoodLevel, string> = {
   5: '高涨',
 };
 
+function loadDraft(): Draft | null {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed.content?.trim()) return parsed;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function saveDraft(draft: Draft) {
+  try {
+    if (draft.content.trim()) {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    } else {
+      localStorage.removeItem(DRAFT_KEY);
+    }
+  } catch { /* quota exceeded, ignore */ }
+}
+
+function clearDraft() {
+  localStorage.removeItem(DRAFT_KEY);
+}
+
 export default function WritePage() {
   const router = useRouter();
+
+  const restored = useRef(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSavedRef = useRef<string>('');
 
   const [content, setContent] = useState('');
   const [mood, setMood] = useState<MoodLevel>(3);
@@ -32,15 +73,58 @@ export default function WritePage() {
 
   const [saving, setSaving] = useState(false);
   const [showReward, setShowReward] = useState<Quote | null>(null);
+  const [saveError, setSaveError] = useState('');
+  const [draftRestored, setDraftRestored] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
+  // Restore draft on mount
+  useEffect(() => {
+    if (restored.current) return;
+    restored.current = true;
+    const draft = loadDraft();
+    if (draft) {
+      setContent(draft.content);
+      setMood(draft.mood);
+      setCategory(draft.category);
+      setTags(draft.tags);
+      setDraftRestored(true);
+    }
+  }, []);
+
+  // Debounced auto-save to localStorage
+  const debouncedSave = useCallback((draft: Draft) => {
+    const key = JSON.stringify(draft);
+    if (key === lastSavedRef.current) return;
+    lastSavedRef.current = key;
+
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => saveDraft(draft), SAVE_DELAY);
+  }, []);
+
+  // Trigger auto-save on state changes
+  useEffect(() => {
+    if (!restored.current) return;
+    debouncedSave({ content, mood, category, tags });
+  }, [content, mood, category, tags, debouncedSave]);
+
+  // Warn before leaving with unsaved content
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (content.trim()) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [content]);
+
+  // Fetch prompts
   useEffect(() => {
     fetch('/api/prompts')
       .then(res => res.json())
       .then(data => {
         setPrompts(data);
-        if (data.length > 0) {
-          setSelectedPrompt(data[0].text);
-        }
+        if (data.length > 0) setSelectedPrompt(data[0].text);
       })
       .catch(() => {
         setPrompts([{ id: 'default', text: '今天我觉察到了什么？' }]);
@@ -54,6 +138,7 @@ export default function WritePage() {
   const handleSave = async () => {
     if (!canSave || saving) return;
     setSaving(true);
+    setSaveError('');
 
     try {
       const res = await fetch('/api/journal', {
@@ -69,6 +154,7 @@ export default function WritePage() {
       });
 
       if (res.ok) {
+        clearDraft();
         const data = await res.json();
         if (data.reward) {
           setShowReward(data.reward);
@@ -76,9 +162,12 @@ export default function WritePage() {
           router.push('/');
           router.refresh();
         }
+      } else {
+        const err = await res.json();
+        setSaveError(err.error || '保存失败，请重试');
       }
-    } catch (error) {
-      console.error('保存失败:', error);
+    } catch {
+      setSaveError('网络连接失败，内容已自动保存到本地');
     } finally {
       setSaving(false);
     }
@@ -109,6 +198,16 @@ export default function WritePage() {
         </Link>
 
         <div className="flex items-center gap-3">
+          {draftRestored && content && (
+            <span className="text-xs text-sage-500">已恢复草稿</span>
+          )}
+          <button
+            onClick={() => setShowPreview(!showPreview)}
+            className={`p-1.5 rounded-lg text-xs transition-colors ${showPreview ? 'bg-sage-100 dark:bg-sage-500/20 text-sage-500' : 'text-ink-light hover:text-ink-muted'}`}
+            title={showPreview ? '关闭预览' : '预览'}
+          >
+            {showPreview ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
           <span className="text-xs text-ink-light">{wordCount} 字</span>
           <button
             onClick={handleSave}
@@ -127,6 +226,13 @@ export default function WritePage() {
           </button>
         </div>
       </div>
+
+      {/* Error message */}
+      {saveError && (
+        <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl p-3 text-sm text-red-600 dark:text-red-400">
+          {saveError}
+        </div>
+      )}
 
       {/* Gentle encouragement */}
       <p className="text-xs text-ink-light dark:text-[#6B6B70] text-center">
@@ -197,6 +303,14 @@ export default function WritePage() {
         autoFocus
         aria-label="日记内容编辑区"
       />
+
+      {/* Markdown preview */}
+      {showPreview && (
+        <div className="bg-white dark:bg-deep-800 rounded-2xl p-5 sm:p-6 border border-warm-200 dark:border-deep-700">
+          <p className="text-xs text-ink-light mb-3">预览</p>
+          <MarkdownPreview content={content} />
+        </div>
+      )}
 
       {/* Metadata section */}
       <div className="space-y-4 pb-8">
