@@ -92,7 +92,11 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('保存日记失败:', message);
-    return NextResponse.json({ error: '保存失败', detail: message }, { status: 500 });
+    console.error('保存日记失败:', message, 'stack:', error instanceof Error ? error.stack : '');
+    return NextResponse.json({
+      error: '保存失败',
+      detail: message,
+      debug: { vercelRegion: process.env.VERCEL_REGION || '(not set)', hasBlobToken: !!process.env.BLOB_READ_WRITE_TOKEN },
+    }, { status: 500 });
   }
 }
